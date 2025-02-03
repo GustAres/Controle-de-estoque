@@ -18,7 +18,7 @@ tabela.execute('''
 ''')
 
 @dataclass
-class registroitem:
+class RegistroItem:
     def __init__(self, nome, qtde, valor_compra, valor_venda, total_brutoC, total_brutoV, total_liquido  ):
         self.nome = nome
         self.qtde = qtde
@@ -28,12 +28,9 @@ class registroitem:
         self.total_brutoV = total_brutoV
         self.total_liquido = total_liquido
 
-
-
-
-
 item = []
 
+#######################Função para criar produto e inserir no estoque#######################
 def inserir():
     banco = sqlite3.connect('Estoque.db')
     tabela = banco.cursor()
@@ -55,18 +52,19 @@ def inserir():
         total_brutoV = qtde * valor_venda
         total_liquido = total_brutoC - total_brutoV
 
-        novo_item = registroitem(nome, qtde, valor_compra, valor_venda, total_brutoC, total_brutoV, total_liquido)
+        novo_item = RegistroItem(nome, qtde, valor_compra, valor_venda, total_brutoC, total_brutoV, total_liquido)
         item.append((novo_item.nome, novo_item.qtde,novo_item.valor_compra, novo_item.valor_venda, novo_item.total_brutoC, novo_item.total_brutoV, novo_item.total_liquido))
 
         tabela.executemany("INSERT INTO Estoque VALUES(?,?,?,?,?,?,?)",item )
         banco.commit()
         tabela.execute('SELECT * FROM Estoque')
 
-
     print(tabela.fetchall())
     banco.close()
 
 
+
+#######################Função para adicionar produto que ja existe ao estoque#######################
 def adicionar():
     banco = sqlite3.connect('Estoque.db')
     tabela = banco.cursor()
