@@ -1,0 +1,28 @@
+Coisas a fazer
+
+1. Manutencao de produtos
+(adicionar, remover,
+2. Remover itens
+3. cadastras itens
+(inserir, remover
+4.Pesquisa de Elementos
+5. retorno bruto/liquido
+6.Alteração de Elementos
+quantidade, valor
+7.
+8.
+9.
+10.
+
+
+ codigos banco de dados
+ criar  item na tabela :
+    tabela.execute("INSERT INTO Estoque VALUES(?,?,?)", (nome, qtde, valor))
+
+atualizar tabela:
+    tabela.execute("UPDATE Estoque SET qtde = ? WHERE nome = ?", (qtde, nome))
+
+
+
+
+

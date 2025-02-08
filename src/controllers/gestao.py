@@ -19,14 +19,13 @@ tabela.execute('''
 
 @dataclass
 class RegistroItem:
-    def __init__(self, nome, qtde, valor_compra, valor_venda, total_brutoC, total_brutoV, total_liquido  ):
-        self.nome = nome
-        self.qtde = qtde
-        self.valor_compra = valor_compra
-        self.valor_venda = valor_venda
-        self.total_brutoC = total_brutoC
-        self.total_brutoV = total_brutoV
-        self.total_liquido = total_liquido
+    nome: str = ""
+    qtde: int = 0
+    valor_compra: float = 0.0
+    valor_venda: float = 0.0
+    total_brutoC: float = 0.0
+    total_brutoV: float = 0.0
+    total_liquido: float = 0.0
 
 item = []
 
@@ -36,7 +35,7 @@ def inserir():
     tabela = banco.cursor()
 
     while True:
-        nome = input('Nome do produto: ')
+        nome = input("Digite o nome do produto ou 'fim' para encerrar: ").lower()
         if nome.lower() == 'fim':
             break
         #Verificando se ja existe
@@ -50,48 +49,110 @@ def inserir():
         valor_venda = float(input('Valor que ira vender: R$ '))
         total_brutoC = qtde * valor_compra
         total_brutoV = qtde * valor_venda
-        total_liquido = total_brutoC - total_brutoV
+        total_liquido = total_brutoV - total_brutoC
+
+        #confirmaçao para adicinor no eastoque
+        print(f"CONFIRMAÇÃO \n Produto : {nome} \n Quantidade : {qtde} \n Valor de Compra: {valor_compra} \n Valor de venda {valor_venda}")
+        confirma = input("DIGITE 'S' OU 'N' : ").lower()
+        if confirma == "n":
+            print('VOLTANDO...\n')
+            continue
 
         novo_item = RegistroItem(nome, qtde, valor_compra, valor_venda, total_brutoC, total_brutoV, total_liquido)
-        item.append((novo_item.nome, novo_item.qtde,novo_item.valor_compra, novo_item.valor_venda, novo_item.total_brutoC, novo_item.total_brutoV, novo_item.total_liquido))
-
+        item.append((novo_item.nome, novo_item.qtde, novo_item.valor_compra, novo_item.valor_venda, novo_item.total_brutoC, novo_item.total_brutoV, novo_item.total_liquido))
         tabela.executemany("INSERT INTO Estoque VALUES(?,?,?,?,?,?,?)",item )
         banco.commit()
-        tabela.execute('SELECT * FROM Estoque')
 
-    print(tabela.fetchall())
     banco.close()
 
 
 
-#######################Função para adicionar produto que ja existe ao estoque#######################
-def adicionar():
+#######################Função para adicionar ou remover produto que ja existe ao estoque#######################
+def alterar():
     banco = sqlite3.connect('Estoque.db')
     tabela = banco.cursor()
 
     while True:
-        nome = input('Qual produto você quer adicionar: ')
-        if nome.lower() == 'fim':
+        opcao = int(input('1- ad   2- remv  ou 0 pra ence'))
+        if opcao == 0:
             break
-
-        tabela.execute("SELECT qtde FROM Estoque WHERE nome = ?", (nome,))
-        item = tabela.fetchone()
-        tabela.execute("SELECT valor_venda FROM Estoque WHERE nome = ?", (nome,))
-        item2 = tabela.fetchone()
-
-        if item:
-            qtde = int(input("Qual a quantidade que deseja adicionar: "))
-
-
-            #arrumar isso
-            ##nova_qtde = item[0] + qtde
-            ###novo_valor = float(input("Novo valor: "))
-
-            tabela.execute("UPDATE Estoque SET qtde = ? WHERE nome = ?", (nova_qtde, nome))
+        elif opcao == 1 :
+            nome = input('Qual produto você quer adicionar: ').lower()
+            tabela.execute("SELECT nome FROM Estoque WHERE nome = ?", (nome,))
+            if tabela.fetchone() == None:
+                print('Este produto não está no estoque. Tente novamente.')
+                continue
+            tabela.execute("SELECT qtde FROM Estoque WHERE nome = ?", (nome,))
+            itemA = tabela.fetchone()
+            adicionar = int(input("Quantidade que ira adicionar: "))
+            nova_qtde = itemA[0] + adicionar
+            print("Quantidade atualizado")
+            tabela.execute("UPDATE Estoque SET qtde =? WHERE nome =?", (nova_qtde, nome))
             banco.commit()
-            print(f"A quantidade do item '{nome}' foi atualizada para {nova_qtde}.")
+
+        elif opcao == 2:
+            nome = input('Qual produto você quer remover: ').lower()
+            tabela.execute("SELECT nome FROM Estoque WHERE nome = ?", (nome,))
+            if tabela.fetchone() == None:
+                print('Este produto não está no estoque. Tente novamente.')
+                continue
+            tabela.execute("SELECT qtde FROM Estoque WHERE nome =?", (nome,))
+            itemR = tabela.fetchone()
+            remover = int(input("Quantidade que ira remover: "))
+            if remover > itemR[0]:
+                print('Quantidade a remover é maior que a quantidade existente no estoque.')
+                continue
+            nova_qtdeR = itemR[0] - remover
+            print("Quantidade atualizado")
+            tabela.execute("UPDATE Estoque SET qtde =? WHERE nome =?", (nova_qtdeR, nome))
+            banco.commit()
         else:
-            print(f"O item '{nome}' não foi encontrado no estoque.")
+            print('Opção invalida. Tente novamente.')
+            continue
+
+def remover():
+    banco = sqlite3.connect('Estoque.db')
+    tabela = banco.cursor()
+    while True:
+        nome = input('Qual produto você quer remover: ').lower()
+        tabela.execute("SELECT nome FROM Estoque WHERE nome =?", (nome,))
+        if tabela.fetchone() == None:
+            print('Este produto não está no estoque. Tente novamente.')
+            continue
+        print(f"CONFIRMAÇÃO \n Produto : {nome}")
+        confirma = input("DIGITE 'S' OU 'N' : ").lower()
+        if confirma == "n":
+            print('VOLTANDO...\n')
+            continue
+        tabela.execute("DELETE FROM Estoque WHERE nome =?", (nome,))
+        banco.commit()
+        print("Produto removido")
+        break
+
+
+def pesquisa():
+    banco = sqlite3.connect('Estoque.db')
+    tabela = banco.cursor()
+
+    while True:
+        nome = input('Qual produto você quer pesquisar: ').lower()
+        tabela.execute("SELECT nome, qtde, total_brutoV FROM Estoque WHERE nome = ?", (nome,))
+        produto = tabela.fetchone()
+
+        if produto is None:
+            print('Este produto não está no estoque.')
+            continue
+
+        print(f"Produto: {produto[0]}")
+        print(f'Quantidade: {produto[1]} unidades')
+        print(f'Valor total bruto: R$ {produto[2]:.2f}')
+
+        opcao = input("Quer ver outro produto? 'S' ou 'N' ").lower()
+        if opcao == "n":
+            break
+        elif opcao != "s":
+            print('Opção inválida. Tente novamente.')
+
     banco.close()
 
 
