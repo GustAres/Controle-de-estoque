@@ -76,7 +76,10 @@ def mostrar_formulario_cadastro():
     botao_voltar.pack(pady=20)
 
 def mostrar_formulario_editar_quantidade():
-    
+    for widget in quadro_conteudo.winfo_children():
+        widget.destroy()
+    label_editar_quantidade = ttk.Label(quadro_conteudo, text="Editar Quantidade Produto")
+    label_editar_quantidade.pack(pady=30)
 
 def criar_widgets_barra(quadro_barra, estado_barra, comando_alternar):
     # Limpa os widgets existentes
@@ -94,9 +97,9 @@ def criar_widgets_barra(quadro_barra, estado_barra, comando_alternar):
             mostrar_conteudo_principal()
         if nome_conteudo == "Cadastrar Produto":
             mostrar_formulario_cadastro()
-         if nome_conteudo == "Editar Quantidade":
-         mostrar_formulario_editar_quantidade
-        # if nome_conteudo == "Ver Lista De Produtos":
+        if nome_conteudo == "Editar Quantidade":
+            mostrar_formulario_editar_quantidade()
+        # if nome_conteudo == "Lista De Produtos":
         # mostrar_formulario_lista
         # if nome_conteudo == "Editar Valores":
         # mostrar_formulario_editar_valores
@@ -107,7 +110,7 @@ def criar_widgets_barra(quadro_barra, estado_barra, comando_alternar):
         ("Início", "🏠", "Início"),
         ("Cadastrar Produto", "📦", "Cadastrar Produto"),
         ("Editar Quantidade", "📝", "Editar Quantidade"),
-        ("Ver Lista De Produtos", "🔍", "Ver Lista De Produtos"),
+        ("Lista De Produtos", "🔍", "Lista De Produtos"),
         ("Editar Valores", "💲", "Editar Valores"),
         ("Remover Produtos", "❌", "Remover Produtos")
     ]
