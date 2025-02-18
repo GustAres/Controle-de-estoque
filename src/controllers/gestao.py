@@ -46,9 +46,8 @@ def inserir(cadastro_nome, cadastro_qtde, cadastro_valorC, cadastro_valorV, apli
         item.append((novo_item.nome, novo_item.qtde, novo_item.valor_compra, novo_item.valor_venda))
         tabela.executemany("INSERT INTO Estoque VALUES(?,?,?,?)", item)
         banco.commit()
-        mostrar_pop_up("Sucesso", "Produto inserido com sucesso!", "info", aplicativo)
     except Exception as e:
-        mostrar_pop_up("Erro", f"Um erro ocorreu: {str(e)}", "danger", aplicativo)
+        return False
     finally:
         banco.close()
 
@@ -65,6 +64,7 @@ def mostrar_pop_up(titulo, mensagem, estilo, aplicativo):
 
     botao_ok = ttk.Button(pop_up, text="OK", bootstyle=estilo, command=pop_up.destroy)
     botao_ok.pack(pady=10)
+    pop_up.after(2000, pop_up.destroy)
 
 
 ####################### Função para aumentar produto #######################
@@ -87,7 +87,6 @@ def aumentar_qtde(aumentar_nome, aumentar_qtde, aplicativo):
         nova_qtde = itemA[0] + adicionar
         tabela.execute("UPDATE Estoque SET qtde =? WHERE nome =?", (nova_qtde, nome))
         banco.commit()
-        mostrar_pop_up("Sucesso", "Quantidade aumentada com sucesso!", "info", aplicativo)
     except Exception as e:
         mostrar_pop_up("Erro", f"Erro ao aumentar quantidade: {str(e)}", "danger", aplicativo)
     finally:

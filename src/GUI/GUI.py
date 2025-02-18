@@ -352,6 +352,7 @@ def principal():
 if __name__ == "__main__":
     principal()
 
-# pop up se auto destruir
-# corrigir pop ups duplicados
+
+
 # adicionar cirulo roxo com o total bruto v e c e total liquido no inicio que se auto atualiza
+#criar logo
