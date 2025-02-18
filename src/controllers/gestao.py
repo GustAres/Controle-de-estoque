@@ -4,6 +4,8 @@ from tkinter import messagebox
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from tkinter import Toplevel
+from tkinter import *
+
 
 
 @dataclass
@@ -16,14 +18,18 @@ class RegistroItem:
     total_brutoV: float = 0.0
     total_liquido: float = 0.0
 
-item = []
+
 
 ####################### Função para criar produto e inserir no estoque #######################
 def inserir(cadastro_nome, cadastro_qtde, cadastro_valorC, cadastro_valorV, aplicativo):
+    item = []
     try:
         banco = sqlite3.connect('Estoque.db')
         tabela = banco.cursor()
         nome = cadastro_nome.lower()
+
+        tabela.execute(" CREATE TABLE IF NOT EXISTS Estoque (nome VARCHAR, qtde INT NOT NULL,valor_compra DOUBLE NOT NULL,valor_venda DOUBLE NOT NULL,total_brutoC DOUBLE GENERATED ALWAYS AS (qtde * valor_compra) STORED,total_brutoV DOUBLE GENERATED ALWAYS AS (qtde * valor_venda) STORED,total_liquido DOUBLE GENERATED ALWAYS AS (total_brutoV - total_brutoC) STORED )")
+
 
         # Verificando se já existe
         tabela.execute("SELECT nome FROM Estoque WHERE nome = ?", (nome,))
@@ -34,20 +40,18 @@ def inserir(cadastro_nome, cadastro_qtde, cadastro_valorC, cadastro_valorV, apli
         qtde = cadastro_qtde
         valor_compra = cadastro_valorC
         valor_venda = cadastro_valorV
-        total_brutoC = qtde * valor_compra
-        total_brutoV = qtde * valor_venda
-        total_liquido = total_brutoV - total_brutoC
 
-        novo_item = RegistroItem(nome, qtde, valor_compra, valor_venda, total_brutoC, total_brutoV, total_liquido)
-        item.append((novo_item.nome, novo_item.qtde, novo_item.valor_compra, novo_item.valor_venda,
-                     novo_item.total_brutoC, novo_item.total_brutoV, novo_item.total_liquido))
-        tabela.executemany("INSERT INTO Estoque VALUES(?,?,?,?,?,?,?)", item)
+
+        novo_item = RegistroItem(nome, qtde, valor_compra, valor_venda)
+        item.append((novo_item.nome, novo_item.qtde, novo_item.valor_compra, novo_item.valor_venda))
+        tabela.executemany("INSERT INTO Estoque VALUES(?,?,?,?)", item)
         banco.commit()
         mostrar_pop_up("Sucesso", "Produto inserido com sucesso!", "info", aplicativo)
     except Exception as e:
         mostrar_pop_up("Erro", f"Um erro ocorreu: {str(e)}", "danger", aplicativo)
     finally:
         banco.close()
+
 
 ####################### Função de Pop-Up #######################
 def mostrar_pop_up(titulo, mensagem, estilo, aplicativo):
@@ -61,6 +65,7 @@ def mostrar_pop_up(titulo, mensagem, estilo, aplicativo):
 
     botao_ok = ttk.Button(pop_up, text="OK", bootstyle=estilo, command=pop_up.destroy)
     botao_ok.pack(pady=10)
+
 
 ####################### Função para aumentar produto #######################
 def aumentar_qtde(aumentar_nome, aumentar_qtde, aplicativo):
@@ -87,6 +92,7 @@ def aumentar_qtde(aumentar_nome, aumentar_qtde, aplicativo):
         mostrar_pop_up("Erro", f"Erro ao aumentar quantidade: {str(e)}", "danger", aplicativo)
     finally:
         banco.close()
+
 
 ####################### Função para diminuir produto #######################
 def diminuir_qtde(diminuir_nome, diminuir_qtde, aplicativo):
@@ -117,21 +123,22 @@ def diminuir_qtde(diminuir_nome, diminuir_qtde, aplicativo):
     finally:
         banco.close()
 
+
 ####################### Função para remover produto #######################
 def remover(remover_nome, aplicativo):
     try:
         banco = sqlite3.connect('Estoque.db')
         tabela = banco.cursor()
-        nome = remover_nome.lower()
+        nome_remove = remover_nome.lower()
 
         # Verificar se tem na tabela
-        tabela.execute("SELECT nome FROM Estoque WHERE nome =?", (nome,))
+        tabela.execute("SELECT nome FROM Estoque WHERE nome =?", (nome_remove,))
         if tabela.fetchone() is None:
             mostrar_pop_up("Erro", "Este produto não está no estoque. Tente novamente.", "danger", aplicativo)
             return
 
         # Exclusão
-        tabela.execute("DELETE FROM Estoque WHERE nome =?", (nome,))
+        tabela.execute("DELETE FROM Estoque WHERE nome =?", (nome_remove,))
         banco.commit()
         mostrar_pop_up("Sucesso", "Produto removido com sucesso!", "info", aplicativo)
     except Exception as e:
@@ -139,21 +146,23 @@ def remover(remover_nome, aplicativo):
     finally:
         banco.close()
 
-####################### Função para alterar valor do produto #######################
-def editar_valor(editar_valor_nome, alterar_valorC, alterar_valorV, aplicativo):
+
+####################### Função para alterar valor de compra do produto #######################
+def editar_valor_compra(editar_valor_nome, alterar_valorC, aplicativo):
     try:
         banco = sqlite3.connect('Estoque.db')
         tabela = banco.cursor()
         nome = editar_valor_nome.lower()
 
-        # Verificar se tem na tabela
+
+    # Verificar se tem na tabela
         tabela.execute("SELECT nome FROM Estoque WHERE nome =?", (nome,))
         if tabela.fetchone() is None:
             mostrar_pop_up("Erro", "Este produto não está no estoque. Tente novamente.", "danger", aplicativo)
             return
 
-        # Editar valor
-        tabela.execute("UPDATE Estoque SET valor_compra = ?, valor_venda = ? WHERE nome = ?", (alterar_valorC, alterar_valorV, nome))
+    # Editar valor
+        tabela.execute("UPDATE Estoque SET valor_compra = ? WHERE nome = ?", (alterar_valorC, nome))
         banco.commit()
         mostrar_pop_up("Sucesso", "Valores alterados com sucesso!", "info", aplicativo)
     except Exception as e:
@@ -161,20 +170,76 @@ def editar_valor(editar_valor_nome, alterar_valorC, alterar_valorV, aplicativo):
     finally:
         banco.close()
 
-####################### Função para pesquisar produto #######################
+
+####################### Função para alterar valor de venda do produto #######################
+def editar_valor_venda(editar_valor_nome,alterar_valorV, aplicativo):
+    try:
+        banco = sqlite3.connect('Estoque.db')
+        tabela = banco.cursor()
+        nome = editar_valor_nome.lower()
+        valor_novo = alterar_valorV
+        # Verificar se tem na tabela
+        tabela.execute("SELECT nome FROM Estoque WHERE nome =?", (nome,))
+        if tabela.fetchone() is None:
+            mostrar_pop_up("Erro", "Este produto não está no estoque. Tente novamente.", "danger", aplicativo)
+            return
+
+    # Editar valor
+        tabela.execute("UPDATE Estoque SET valor_venda = ? WHERE nome = ?",(valor_novo, nome))
+        banco.commit()
+        mostrar_pop_up("Sucesso", "Valores alterados com sucesso!", "info", aplicativo)
+    except Exception as e:
+        mostrar_pop_up("Erro", f"Erro ao editar valores: {str(e)}", "danger", aplicativo)
+    finally:
+        banco.close()
+
+
+####################### Função para alterar o nome do produto #######################
+def editar_nome(nome,editar_nome, aplicativo):
+    try:
+        banco = sqlite3.connect('Estoque.db')
+        tabela = banco.cursor()
+        nome_selecionado = nome.lower()
+        nome_editado = editar_nome.lower()
+
+        # Verificar se tem na tabela
+        tabela.execute("SELECT nome FROM Estoque WHERE nome =?", (nome_selecionado,))
+        if tabela.fetchone() is None:
+            mostrar_pop_up("Erro", "Este produto não está no estoque. Tente novamente.", "danger", aplicativo)
+            return
+        # Verificar se o novo nome já existe na tabela
+        tabela.execute("SELECT nome FROM Estoque WHERE nome =?", (nome_editado,))
+        if tabela.fetchone() is not None:
+            mostrar_pop_up("Erro", "O novo nome já está em uso. Tente novamente.", "danger", aplicativo)
+            return
+
+        # Editar valor
+        tabela.execute("UPDATE Estoque SET nome = ? WHERE nome = ?", (nome_editado, nome_selecionado))
+        banco.commit()
+        mostrar_pop_up("Sucesso", "Valores alterados com sucesso!", "info", aplicativo)
+
+        # Atualizar a interface com o novo nome
+        aplicativo.event_generate("<<NomeProdutoAtualizado>>", when="tail")
+    except Exception as e:
+        mostrar_pop_up("Erro", f"Erro ao editar valores: {str(e)}", "danger", aplicativo)
+    finally:
+        banco.close()        
+
+
+
+####################### Função para para pesquisar o produto #######################
 def pesquisa(pesquisa_nome, aplicativo):
     try:
         banco = sqlite3.connect('Estoque.db')
         tabela = banco.cursor()
         nome = pesquisa_nome.lower()
-        tabela.execute("SELECT nome, qtde, total_brutoV FROM Estoque WHERE nome = ?", (nome,))
+        tabela.execute("SELECT * FROM Estoque WHERE nome = ?", (nome,))
         produto = tabela.fetchone()
 
         # Verificar se tem na tabela
         if produto is None:
-            mostrar_pop_up("Erro", "Este produto não está no estoque.", "danger", aplicativo)
             return
-
+        return produto
     except Exception as e:
         mostrar_pop_up("Erro", f"Erro na pesquisa: {str(e)}", "danger", aplicativo)
     finally:
@@ -192,24 +257,5 @@ def ver_valor(aplicativo):
         return total_compra, total_liquido
     except Exception as e:
         mostrar_pop_up("Erro", f"Erro ao obter valores: {str(e)}", "danger", aplicativo)
-    finally:
-        banco.close()
-
-def mostar_tabela(aplicativo):
-    try:
-        banco = sqlite3.connect('Estoque.db')
-        tabela = banco.cursor()
-        tabela.execute("SELECT * FROM Estoque")
-
-        print("PRODUTOS NO ESTOQUE:")
-        print("Nome | Quantidade | Valor de Compra | Valor de Venda | Total Bruto | Total Líquido")
-        print("-------------------------------------------------------------------------------------------------------")
-
-        for item in tabela.fetchall():
-            print(f"{item[0]} | {item[1]} | R$ {item[2]:.2f} | R$ {item[3]:.2f} | R$ {item[4]:.2f} | R$ {item[5]:.2f}")
-
-        print("-------------------------------------------------------------------------------------------------------")
-    except Exception as e:
-        mostrar_pop_up("Erro", f"Erro ao mostrar tabela: {str(e)}", "danger", aplicativo)
     finally:
         banco.close()
