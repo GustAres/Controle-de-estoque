@@ -64,7 +64,7 @@ def mostrar_pop_up(titulo, mensagem, estilo, aplicativo):
 
     botao_ok = ttk.Button(pop_up, text="OK", bootstyle=estilo, command=pop_up.destroy)
     botao_ok.pack(pady=10)
-    pop_up.after(2000, pop_up.destroy)
+    pop_up.after(6000, pop_up.destroy)
 
 
 ####################### Função para aumentar produto #######################
